@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>love.exe</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Courier New', monospace; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes scanline { 0%{top:-40px} 100%{top:100%} }
+  @keyframes glitch1 { 0%,100%{clip-path:inset(0 0 95% 0);transform:translateX(0)} 20%{clip-path:inset(30% 0 50% 0);transform:translateX(-4px)} 40%{clip-path:inset(60% 0 20% 0);transform:translateX(4px)} 60%{clip-path:inset(10% 0 80% 0);transform:translateX(-2px)} 80%{clip-path:inset(80% 0 5% 0);transform:translateX(3px)} }
+  @keyframes glitch2 { 0%,100%{clip-path:inset(0 0 95% 0);transform:translateX(0)} 20%{clip-path:inset(50% 0 30% 0);transform:translateX(4px)} 40%{clip-path:inset(20% 0 60% 0);transform:translateX(-4px)} 60%{clip-path:inset(75% 0 10% 0);transform:translateX(2px)} 80%{clip-path:inset(5% 0 85% 0);transform:translateX(-3px)} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulse { 0%,100%{opacity:0.15} 50%{opacity:0.35} }
+  @keyframes underline { from{width:0} to{width:100%} }
+  .card { background: #0d1117; border-radius: 14px; overflow: hidden; position: relative; width: 600px; border: 0.5px solid #30363d; }
+  .titlebar { background: #161b22; padding: 11px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 0.5px solid #30363d; position: relative; z-index: 2; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .body { padding: 32px 36px; position: relative; z-index: 2; }
+  .scanline { position: absolute; left: 0; right: 0; height: 40px; background: rgba(63,185,80,0.04); animation: scanline 4s linear infinite; pointer-events: none; z-index: 1; }
+  .rain { position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.07; }
+  .big { font-size: 42px; font-weight: bold; color: #3fb950; letter-spacing: 2px; animation: fadeUp 0.6s ease 0.8s both; position: relative; display: inline-block; }
+  .big-wrap { position: relative; margin-bottom: 36px; display: inline-block; }
+  .ul { position: absolute; bottom: -4px; left: 0; height: 2px; background: #3fb950; animation: underline 0.8s ease 1.6s both; border-radius: 2px; width: 0; }
+  .g1 { position: absolute; inset: 0; font-size: 42px; font-weight: bold; color: #ff7b72; letter-spacing: 2px; animation: glitch1 0.15s steps(1) 2.4s 6, fadeUp 0.6s ease 0.8s both; opacity: 0.7; pointer-events: none; }
+  .g2 { position: absolute; inset: 0; font-size: 42px; font-weight: bold; color: #58a6ff; letter-spacing: 2px; animation: glitch2 0.15s steps(1) 2.4s 6, fadeUp 0.6s ease 0.8s both; opacity: 0.5; pointer-events: none; }
+  .meta { display: flex; flex-direction: column; gap: 10px; animation: fadeUp 0.5s ease 1.8s both; font-size: 13px; color: #8b949e; }
+  .prompt { margin-top: 28px; display: flex; align-items: center; gap: 6px; animation: fadeUp 0.5s ease 2.2s both; font-size: 13px; }
+  .running { font-size: 11px; color: #3fb950; margin-left: auto; animation: pulse 2s infinite; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="scanline"></div>
+  <canvas class="rain" id="rain" width="600" height="380"></canvas>
+
+  <div class="titlebar">
+    <div class="dot" style="background:#ff5f57"></div>
+    <div class="dot" style="background:#febc2e"></div>
+    <div class="dot" style="background:#28c840"></div>
+    <span style="font-size:12px;color:#6e7681;margin-left:8px">love.exe</span>
+    <span class="running">● running</span>
+  </div>
+
+  <div class="body">
+    <div style="animation:fadeUp 0.5s ease 0.2s both;font-size:13px;color:#6e7681;margin-bottom:24px">
+      <span style="color:#58a6ff">~/love</span> <span style="color:#e6edf3">$</span> node love.exe
+    </div>
+
+    <div class="big-wrap">
+      <div class="big">я люблю тебя<div class="ul"></div></div>
+      <div class="g1">я люблю тебя</div>
+      <div class="g2">я люблю тебя</div>
+    </div>
+
+    <div class="meta">
+      <div><span style="color:#d2a8ff">status</span>: <span style="color:#3fb950">200 OK</span></div>
+      <div><span style="color:#d2a8ff">uptime</span>: <span style="color:#ffa657" id="uptime">0</span>s</div>
+      <div><span style="color:#d2a8ff">memory_used</span>: <span style="color:#a5d6ff">100%</span> <span style="color:#8b949e">(you)</span></div>
+      <div><span style="color:#d2a8ff">errors</span>: <span style="color:#3fb950">0</span></div>
+    </div>
+
+    <div class="prompt">
+      <span style="color:#58a6ff">~/love</span>
+      <span style="color:#e6edf3">$</span>
+      <span style="color:#e6edf3" id="typing-line"></span>
+      <span style="color:#e6edf3;animation:blink 1s infinite">▌</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('rain');
+  const ctx = canvas.getContext('2d');
+  const cols = Math.floor(canvas.width / 14);
+  const drops = Array(cols).fill(1);
+  const chars = 'アイウエオ01❤♥{}[]<>';
+  function drawRain() {
+    ctx.fillStyle = 'rgba(13,17,23,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#3fb950';
+    ctx.font = '12px monospace';
+    drops.forEach((y, i) => {
+      const c = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(c, i * 14, y * 14);
+      if (y * 14 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+  }
+  setInterval(drawRain, 60);
+
+  let sec = 0;
+  setInterval(() => { document.getElementById('uptime').textContent = ++sec; }, 1000);
+
+  const phrases = ['git commit -m "love"', 'push origin heart', 'forever --flag you'];
+  let pi = 0, ci = 0;
+  const tl = document.getElementById('typing-line');
+  function typeNext() {
+    if (ci < phrases[pi].length) {
+      tl.textContent += phrases[pi][ci++];
+      setTimeout(typeNext, 70);
+    } else {
+      setTimeout(() => {
+        tl.textContent = '';
+        ci = 0;
+        pi = (pi + 1) % phrases.length;
+        setTimeout(typeNext, 400);
+      }, 1800);
+    }
+  }
+  setTimeout(typeNext, 2800);
+</script>
+</body>
+</html>
